@@ -18,7 +18,13 @@ EVENTS = [
     EconomicEvent(
         id=4, title="Housing slowdown", category="Housing",
         description="Demo scenario: housing demand and transaction activity weaken.",
+   
     ),
+    EconomicEvent(
+        id=5, title="Federal Reserve Rate Hike", category="Interest Rates",
+        description="Federal Reserve rate hike impacting borrowing costs and consumer debt.",
+    ),
+]
 ]
 
 
@@ -75,6 +81,26 @@ RULES = (
          "Local housing conditions matter",
          "Strong employment may support housing demand; a slowdown may reduce transactions or pricing power. Location, vacancies, and property type determine actual exposure.",
          ("Compare local rents, vacancies, and sale activity.", "Stress-test cash flow without assuming price appreciation.")),
+    Rule("income-demand", (2, 4, 5), "income", "moderate",
+         "Slower demand may affect earnings",
+         "Higher financing costs or weaker housing activity can slow hiring in exposed industries. Your occupation alone cannot predict job security.",
+         ("Review your emergency savings needs.", "Watch hiring trends in your own industry.")),
+    // ...existing code...
+    Rule("business-costs", (1, 2, 5), "business", "high",
+         "Costs and cash flow deserve attention",
+         "Inflation can raise operating costs; rate increases can raise variable-rate or new loan costs. Effects depend on contracts, debt, and customer demand.",
+         ("Review cash flow and essential operating costs.", "Check whether business loans are fixed or variable rate.")),
+    // ...existing code...
+    Rule("investments-rates", (1, 2, 5), "investments", "moderate",
+         "Rate-sensitive investments may face pressure",
+         "Inflation and higher discount rates can pressure valuations. Outcomes depend on expectations, diversification, and individual holdings; no tickers were collected.",
+         ("Review diversification and time horizon.", "Understand exposure before making any investment decision.")),
+    // ...existing code...
+    Rule("property-financing", (1, 2, 5), "realEstate", "high",
+         "New financing may become more expensive",
+         "Higher rates can affect new or variable-rate mortgages. Existing fixed-rate payments do not automatically increase; inflation may also raise maintenance costs.",
+         ("Check mortgage terms and renewal dates.", "Review maintenance costs and cash reserves.")),
+
 )
 
 ASSUMPTIONS = [
