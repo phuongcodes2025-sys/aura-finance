@@ -693,3 +693,16 @@ def test_openapi_exposes_both_contracts(client):
     assert "income_range" in component["properties"]
     assert "incomeRange" not in component["properties"]
     assert client.get("/docs").status_code == 200
+
+
+def test_root_analyze_returns_risk_summary(client):
+    user_id = client.post("/api/profile", json=PROFILE).json()["id"]
+    response = client.post("/analyze", json={"user_id": user_id, "event_id": 1})
+    assert response.status_code == 200
+    assert response.json() == {
+        "income_risk": "High", "business_risk": "High",
+        "investment_risk": "Moderate", "real_estate_risk": "Moderate",
+    }
+    assert client.post("/analyze", json={"user_id": 999, "event_id": 1}).status_code == 404
+    assert client.post("/analyze", json={"user_id": user_id, "event_id": 99}).status_code == 404
+    assert client.post("/analyze", json={"user_id": 0, "event_id": 1}).status_code == 422

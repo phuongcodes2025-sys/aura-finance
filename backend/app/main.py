@@ -7,8 +7,8 @@ from .advisor import AISettings
 from .database import Database
 from .routes import chat_reply, database_errors, saved_analysis
 from .schemas import (
-    Analysis, AnalysisHistoryItem, AnalyzeInput, ChatInput, ChatMessage, ChatOutput,
-    Dashboard, EconomicEvent, Health, Profile, ProfileInput, ProfileUpdate,
+    Analysis, AnalysisHistoryItem, AnalyzeInput, AnalyzeRequest, ChatInput, ChatMessage, ChatOutput,
+    Dashboard, EconomicEvent, Health, Profile, RiskSummary, ProfileInput, ProfileUpdate,
 )
 from .v1 import create_router
 
@@ -75,6 +75,17 @@ def create_app(database_path: str | None = None, ai_settings: AISettings | None 
     def create_analysis(data: AnalyzeInput):
         with database_errors():
             return database.create_analysis(data.user_id, data.event_id)
+
+    @app.post("/analyze", response_model=RiskSummary, tags=["Analyze"])
+    def analyze_risks(data: AnalyzeRequest):
+        with database_errors():
+            result = database.create_analysis(data.user_id, data.event_id)
+        labels = {"low": "Low", "moderate": "Moderate", "high": "High", "notApplicable": "Not applicable"}
+        risks = {impact.area: labels[impact.risk] for impact in result.impacts}
+        return RiskSummary(
+            income_risk=risks["income"], business_risk=risks["business"],
+            investment_risk=risks["investments"], real_estate_risk=risks["realEstate"],
+        )
 
     @app.get("/api/analysis/{analysis_id}", response_model=Analysis)
     def get_analysis(analysis_id: int = Path(gt=0)):
