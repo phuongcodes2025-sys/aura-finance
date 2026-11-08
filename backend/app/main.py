@@ -29,6 +29,10 @@ def create_app(database_path: str | None = None, ai_settings: AISettings | None 
 
     app = FastAPI(title="Aura Finance", version="0.1.0", lifespan=lifespan)
 
+    @app.get("/")
+    def read_root():
+        return {"message": "Welcome to Aura Finance API", "docs": "/docs", "health": "/api/health"}
+
     @app.get("/api/health", response_model=Health)
     def health():
         return Health(aiConfigured=bool(settings.api_key))
