@@ -90,7 +90,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**.
+Open **http://127.0.0.1:5174**.
 API documentation is at **http://127.0.0.1:8000/docs**.
 
 Vite proxies `/api` to the backend on port 8000, keeping requests same-origin.
