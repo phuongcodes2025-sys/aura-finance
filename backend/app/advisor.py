@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from .models import Analysis
+from .schemas import Analysis
 
 logger = logging.getLogger(__name__)
 

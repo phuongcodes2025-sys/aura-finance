@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .models import Area, EconomicEvent, Impact, Profile, Risk
+from .schemas import Area, EconomicEvent, Impact, Profile, Risk
 
 EVENTS = [
     EconomicEvent(
@@ -18,13 +18,11 @@ EVENTS = [
     EconomicEvent(
         id=4, title="Housing slowdown", category="Housing",
         description="Demo scenario: housing demand and transaction activity weaken.",
-   
     ),
     EconomicEvent(
         id=5, title="Federal Reserve Rate Hike", category="Interest Rates",
-        description="Federal Reserve rate hike impacting borrowing costs and consumer debt.",
+        description="Demo scenario: the Federal Reserve raises policy rates, potentially increasing new and variable-rate borrowing costs.",
     ),
-]
 ]
 
 
@@ -45,7 +43,7 @@ RULES = (
          "Purchasing power may fall",
          "If prices rise faster than your pay, the same income buys less. The profile does not include wage growth or expenses.",
          ("Compare essential expenses with income growth.", "Review your budget using actual costs.")),
-    Rule("income-demand", (2, 4), "income", "moderate",
+    Rule("income-demand", (2, 4, 5), "income", "moderate",
          "Slower demand may affect earnings",
          "Higher financing costs or weaker housing activity can slow hiring in exposed industries. Your occupation alone cannot predict job security.",
          ("Review your emergency savings needs.", "Watch hiring trends in your own industry.")),
@@ -53,7 +51,7 @@ RULES = (
          "Stronger hiring may create opportunities",
          "A strong labor market can support wages and job options, but national trends may not match your industry or location.",
          ("Compare local job openings and compensation.", "Consider building skills relevant to your career.")),
-    Rule("business-costs", (1, 2), "business", "high",
+    Rule("business-costs", (1, 2, 5), "business", "high",
          "Costs and cash flow deserve attention",
          "Inflation can raise operating costs; rate increases can raise variable-rate or new loan costs. Effects depend on contracts, debt, and customer demand.",
          ("Review cash flow and essential operating costs.", "Check whether business loans are fixed or variable rate.")),
@@ -65,7 +63,7 @@ RULES = (
          "Housing-linked demand may weaken",
          "Businesses connected to construction, moving, or home purchases may see softer demand. Other businesses may be less exposed.",
          ("Identify customers tied to housing activity.", "Review cash flow under a slower-sales scenario.")),
-    Rule("investments-rates", (1, 2), "investments", "moderate",
+    Rule("investments-rates", (1, 2, 5), "investments", "moderate",
          "Rate-sensitive investments may face pressure",
          "Inflation and higher discount rates can pressure valuations. Outcomes depend on expectations, diversification, and individual holdings; no tickers were collected.",
          ("Review diversification and time horizon.", "Understand exposure before making any investment decision.")),
@@ -73,7 +71,7 @@ RULES = (
          "Sector effects can differ",
          "Strong jobs can support earnings but also change rate expectations. A housing slowdown can weigh on housing-linked firms. Neither scenario predicts market direction.",
          ("Compare sector exposure with your risk tolerance.", "Avoid treating a single economic signal as a trading instruction.")),
-    Rule("property-financing", (1, 2), "realEstate", "moderate",
+    Rule("property-financing", (1, 2, 5), "realEstate", "moderate",
          "New financing may become more expensive",
          "Higher rates can affect new or variable-rate mortgages. Existing fixed-rate payments do not automatically increase; inflation may also raise maintenance costs.",
          ("Check mortgage terms and renewal dates.", "Review maintenance costs and cash reserves.")),
@@ -81,30 +79,10 @@ RULES = (
          "Local housing conditions matter",
          "Strong employment may support housing demand; a slowdown may reduce transactions or pricing power. Location, vacancies, and property type determine actual exposure.",
          ("Compare local rents, vacancies, and sale activity.", "Stress-test cash flow without assuming price appreciation.")),
-    Rule("income-demand", (2, 4, 5), "income", "moderate",
-         "Slower demand may affect earnings",
-         "Higher financing costs or weaker housing activity can slow hiring in exposed industries. Your occupation alone cannot predict job security.",
-         ("Review your emergency savings needs.", "Watch hiring trends in your own industry.")),
-    // ...existing code...
-    Rule("business-costs", (1, 2, 5), "business", "high",
-         "Costs and cash flow deserve attention",
-         "Inflation can raise operating costs; rate increases can raise variable-rate or new loan costs. Effects depend on contracts, debt, and customer demand.",
-         ("Review cash flow and essential operating costs.", "Check whether business loans are fixed or variable rate.")),
-    // ...existing code...
-    Rule("investments-rates", (1, 2, 5), "investments", "moderate",
-         "Rate-sensitive investments may face pressure",
-         "Inflation and higher discount rates can pressure valuations. Outcomes depend on expectations, diversification, and individual holdings; no tickers were collected.",
-         ("Review diversification and time horizon.", "Understand exposure before making any investment decision.")),
-    // ...existing code...
-    Rule("property-financing", (1, 2, 5), "realEstate", "high",
-         "New financing may become more expensive",
-         "Higher rates can affect new or variable-rate mortgages. Existing fixed-rate payments do not automatically increase; inflation may also raise maintenance costs.",
-         ("Check mortgage terms and renewal dates.", "Review maintenance costs and cash reserves.")),
-
 )
 
 ASSUMPTIONS = [
-    "These four events are hypothetical demo scenarios, not live economic news.",
+    "These five events are hypothetical demo scenarios, not live economic news.",
     "Risk labels are qualitative rule-based attention indicators, not probabilities, loss estimates, or personalized forecasts.",
     "Income range and occupation provide context only; no dollar impacts, wage changes, or investment returns are calculated.",
     "Debt terms, expenses, specific holdings, and location are unknown. Suggested considerations are educational, not financial advice.",

@@ -1,11 +1,11 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path
 
 from .advisor import AISettings, AdvisorError, explain
 from .database import Database
-from .models import Analysis, AnalyzeInput, ChatInput, ChatOutput, EconomicEvent, Health, Profile, ProfileInput
+from .schemas import Analysis, AnalyzeInput, ChatInput, ChatOutput, EconomicEvent, Health, Profile, ProfileInput
 
 
 def create_app(database_path: str | None = None, ai_settings: AISettings | None = None) -> FastAPI:
@@ -35,6 +35,13 @@ def create_app(database_path: str | None = None, ai_settings: AISettings | None 
     @app.post("/api/profile", response_model=Profile, status_code=201)
     def create_profile(data: ProfileInput):
         return database.create_profile(data)
+
+    @app.get("/api/profile/{user_id}", response_model=Profile)
+    def get_profile(user_id: int = Path(gt=0)):
+        result = database.profile(user_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        return result
 
     @app.post("/api/analyze", response_model=Analysis, status_code=201)
     def create_analysis(data: AnalyzeInput):

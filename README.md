@@ -29,7 +29,7 @@ homeowners exploring economic scenarios.
 | Feature | Implemented behavior |
 |---|---|
 | Demo financial profile | Occupation, income range, and business, investment, and property exposure; no account required |
-| Economic event selector | Four hypothetical events: inflation up, interest rate increase, strong jobs report, and housing slowdown |
+| Economic event selector | Five hypothetical events: inflation up, interest rate increase, strong jobs report, housing slowdown, and Federal Reserve rate hike |
 | Impact engine | Ten deterministic business rules produce four impact cards with attention labels, explanations, and considerations |
 | AI explanation | Follow-up questions grounded in a saved analysis through an OpenAI-compatible API |
 
@@ -125,9 +125,10 @@ as NVDA; do not imply a ticker-level portfolio analysis.
 
 ## How the rules work
 
-`backend/app/impact.py` contains four curated event descriptions and exactly ten
+`backend/app/impact.py` contains five curated event descriptions and exactly ten
 rules. A rule can cover multiple related events. Each supported event matches
-exactly one rule per active financial area.
+exactly one rule per active financial area. The Federal Reserve rate-hike scenario
+uses the existing interest-rate rules, including conditional mortgage exposure.
 
 - Income always receives an analysis.
 - Unselected business, investment, or property exposure is **Not applicable**.
@@ -171,9 +172,10 @@ aura-finance/
 │   ├── requirements-dev.txt
 │   ├── app/
 │   │   ├── main.py         # Routes, configuration, startup
-│   │   ├── models.py       # Validated API contracts
+│   │   ├── schemas.py      # Validated Pydantic request/response contracts
+│   │   ├── models.py       # Compatibility imports from schemas.py
 │   │   ├── database.py     # SQLite persistence
-│   │   ├── impact.py       # Four events and ten business rules
+│   │   ├── impact.py       # Five events and ten business rules
 │   │   └── advisor.py      # Contextual AI integration
 │   └── tests/
 └── frontend/
@@ -192,7 +194,7 @@ aura-finance/
 | Table | Stored information |
 |---|---|
 | `users` | Demo name, occupation, income range, exposure flags, timestamp |
-| `economic_events` | Four seeded event IDs, titles, categories, descriptions |
+| `economic_events` | Five seeded event IDs, titles, categories, descriptions |
 | `analysis_results` | Profile/event references, timestamp, complete JSON snapshot |
 
 Tables are created on startup and events are seeded idempotently. Foreign keys
@@ -210,8 +212,9 @@ events, or analyses return `404`.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/health` | Backend readiness and whether AI credentials are configured |
-| GET | `/api/events` | List the four demo scenarios |
+| GET | `/api/events` | List the five demo scenarios |
 | POST | `/api/profile` | Save a demo profile; returns `201` |
+| GET | `/api/profile/{user_id}` | Retrieve a saved profile; unknown IDs return `404`, non-positive or invalid IDs return `422` |
 | POST | `/api/analyze` | Apply rules and save an analysis; returns `201` |
 | GET | `/api/analysis/{id}` | Retrieve the saved analysis snapshot |
 | POST | `/api/chat` | Explain a question using an existing analysis |
@@ -270,8 +273,8 @@ npm test
 npm run build
 ```
 
-Backend tests cover all four events, all eight exposure combinations, and all
-four income ranges, plus persistence, input validation, missing records, and
+Backend tests cover all five events, all eight exposure combinations, and all
+four income ranges, plus profile retrieval, persistence, input validation, missing records, and
 mocked provider responses and failures. Frontend tests cover the demo workflow,
 stale-result clearing, contextual AI questions, visible errors, and retry behavior.
 Tests do not require a real AI key or spend provider credits.
