@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .impact import ASSUMPTIONS, EVENTS, analyze
-from .models import Analysis, EconomicEvent, Profile, ProfileInput
+from .schemas import Analysis, EconomicEvent, Profile, ProfileInput
 
 
 def timestamp() -> str:
@@ -79,6 +79,13 @@ class Database:
             )
             row = connection.execute("SELECT * FROM users WHERE id=?", (cursor.lastrowid,)).fetchone()
         return self._profile(row)
+
+    def profile(self, user_id: int) -> Profile | None:
+        with self.connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM users WHERE id=?", (user_id,),
+            ).fetchone()
+        return self._profile(row) if row is not None else None
 
     @staticmethod
     def _profile(row: sqlite3.Row) -> Profile:

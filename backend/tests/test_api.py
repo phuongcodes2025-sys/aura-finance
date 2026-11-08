@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.advisor import AISettings
 from app.impact import EVENTS, RULES, analyze
 from app.main import create_app
-from app.models import Profile
+from app.schemas import Profile
 
 PROFILE = {
     "name": "Dallas demo",
@@ -38,8 +38,8 @@ def saved_analysis(client):
 def test_health_events_and_rule_count(client):
     assert client.get("/api/health").json() == {"status": "ok", "aiConfigured": False}
     events = client.get("/api/events").json()
-    assert len(events) == 4
-    assert [event["id"] for event in events] == [1, 2, 3, 4]
+    assert len(events) == 5
+    assert [event["id"] for event in events] == [1, 2, 3, 4, 5]
     assert len(RULES) == 10
     assert len({rule.id for rule in RULES}) == 10
 
@@ -76,7 +76,50 @@ def test_profile_analysis_snapshot_and_restart(tmp_path):
         assert result["event"]["id"] == 2
     with TestClient(create_app(path, NO_AI)) as restarted:
         assert restarted.get(f"/api/analysis/{result['id']}").json() == result
-        assert len(restarted.get("/api/events").json()) == 4
+        assert len(restarted.get("/api/events").json()) == 5
+
+
+def test_profile_retrieval_and_restart(tmp_path):
+    path = str(tmp_path / "profile.sqlite3")
+    with TestClient(create_app(path, NO_AI)) as client:
+        response = client.post("/api/profile", json={**PROFILE, "name": " Sarah "})
+        assert response.status_code == 201
+        profile = response.json()
+        assert profile["name"] == "Sarah"
+        assert client.get(f"/api/profile/{profile['id']}").json() == profile
+    with TestClient(create_app(path, NO_AI)) as restarted:
+        response = restarted.get(f"/api/profile/{profile['id']}")
+        assert response.status_code == 200
+        assert response.json() == profile
+
+
+def test_profile_not_found(client):
+    response = client.get("/api/profile/99")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Profile not found"}
+
+
+@pytest.mark.parametrize("user_id", ["0", "-1", "invalid", "1.5"])
+def test_invalid_profile_path(client, user_id):
+    assert client.get(f"/api/profile/{user_id}").status_code == 422
+
+
+def test_models_compatibility_import():
+    from app.models import Profile as LegacyProfile
+
+    assert LegacyProfile is Profile
+
+
+def test_federal_reserve_event_reuses_interest_rate_rules(client):
+    profile_id = client.post("/api/profile", json=PROFILE).json()["id"]
+    rate_analysis = client.post(
+        "/api/analyze", json={"userId": profile_id, "eventId": 2},
+    )
+    fed_analysis = client.post(
+        "/api/analyze", json={"userId": profile_id, "eventId": 5},
+    )
+    assert rate_analysis.status_code == fed_analysis.status_code == 201
+    assert fed_analysis.json()["impacts"] == rate_analysis.json()["impacts"]
 
 
 @pytest.mark.parametrize("change", [
