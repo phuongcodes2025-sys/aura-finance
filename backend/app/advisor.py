@@ -45,7 +45,7 @@ async def explain(settings: AISettings, analysis: Analysis, question: str) -> st
         raise AdvisorError(503, "AI explanations are not configured. The rule-based dashboard remains available.")
     context = analysis.model_dump(exclude={"id", "created_at"}, by_alias=True)
     # Names and database metadata are unnecessary for economic explanations.
-    for key in ("name", "id", "createdAt"):
+    for key in ("name", "id", "createdAt", "stocks", "properties"):
         context["profile"].pop(key, None)
     try:
         async with httpx.AsyncClient(timeout=25) as client:

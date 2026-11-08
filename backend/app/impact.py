@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .schemas import Area, EconomicEvent, Impact, Profile, Risk
+from .schemas import Analysis, Area, EconomicEvent, Impact, Profile, Risk
 
 EVENTS = [
     EconomicEvent(
@@ -65,7 +65,7 @@ RULES = (
          ("Identify customers tied to housing activity.", "Review cash flow under a slower-sales scenario.")),
     Rule("investments-rates", (1, 2, 5), "investments", "moderate",
          "Rate-sensitive investments may face pressure",
-         "Inflation and higher discount rates can pressure valuations. Outcomes depend on expectations, diversification, and individual holdings; no tickers were collected.",
+         "Inflation and higher discount rates can pressure valuations. Outcomes depend on expectations, diversification, and individual holdings; these rules do not perform ticker-level analysis.",
          ("Review diversification and time horizon.", "Understand exposure before making any investment decision.")),
     Rule("investments-growth", (3, 4), "investments", "moderate",
          "Sector effects can differ",
@@ -85,7 +85,7 @@ ASSUMPTIONS = [
     "These five events are hypothetical demo scenarios, not live economic news.",
     "Risk labels are qualitative rule-based attention indicators, not probabilities, loss estimates, or personalized forecasts.",
     "Income range and occupation provide context only; no dollar impacts, wage changes, or investment returns are calculated.",
-    "Debt terms, expenses, specific holdings, and location are unknown. Suggested considerations are educational, not financial advice.",
+    "Debt terms, expenses, holding values, and location are unknown. Holdings indicate broad exposure only. Suggested considerations are educational, not financial advice.",
 ]
 
 
@@ -116,3 +116,19 @@ def analyze(profile: Profile, event: EconomicEvent) -> list[Impact]:
             ruleId=rule.id,
         ))
     return impacts
+
+
+def complete_analysis(result: Analysis) -> Analysis:
+    recommendations = list(dict.fromkeys(
+        text for impact in result.impacts for text in impact.considerations
+    ))
+    if len(recommendations) < 3:
+        recommendations.append("Review your financial goals and time horizon before making changes.")
+    summary = " ".join(
+        f"{impact.area}: {impact.summary}."
+        for impact in result.impacts if impact.risk != "notApplicable"
+    )
+    return result.model_copy(update={
+        "overall_summary": result.overall_summary if result.overall_summary is not None else summary,
+        "recommendations": result.recommendations or recommendations,
+    })

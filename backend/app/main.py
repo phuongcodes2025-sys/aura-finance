@@ -3,9 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Path
 
-from .advisor import AISettings, AdvisorError, explain
+from .advisor import AISettings
 from .database import Database
-from .schemas import Analysis, AnalyzeInput, ChatInput, ChatOutput, EconomicEvent, Health, Profile, ProfileInput
+from .routes import chat_reply, database_errors, saved_analysis
+from .schemas import (
+    Analysis, AnalysisHistoryItem, AnalyzeInput, ChatInput, ChatMessage, ChatOutput,
+    Dashboard, EconomicEvent, Health, Profile, ProfileInput, ProfileUpdate,
+)
+from .v1 import create_router
 
 
 def create_app(database_path: str | None = None, ai_settings: AISettings | None = None) -> FastAPI:
@@ -32,6 +37,13 @@ def create_app(database_path: str | None = None, ai_settings: AISettings | None 
     def events():
         return database.events()
 
+    @app.get("/api/events/{event_id}", response_model=EconomicEvent)
+    def event_details(event_id: int = Path(gt=0)):
+        event = database.event(event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Economic event not found")
+        return event
+
     @app.post("/api/profile", response_model=Profile, status_code=201)
     def create_profile(data: ProfileInput):
         return database.create_profile(data)
@@ -43,31 +55,48 @@ def create_app(database_path: str | None = None, ai_settings: AISettings | None 
             raise HTTPException(status_code=404, detail="Profile not found")
         return result
 
+    @app.patch("/api/profile/{user_id}", response_model=Profile)
+    def update_profile(data: ProfileUpdate, user_id: int = Path(gt=0)):
+        with database_errors():
+            return database.update_profile(user_id, data)
+
+    @app.delete("/api/profile/{user_id}")
+    def delete_profile(user_id: int = Path(gt=0)):
+        with database_errors():
+            database.delete_profile(user_id)
+        return {"message": "Profile deleted"}
+
+    @app.get("/api/profile/{user_id}/analyses", response_model=list[AnalysisHistoryItem])
+    def analysis_history(user_id: int = Path(gt=0)):
+        with database_errors():
+            return database.analysis_history(user_id)
+
     @app.post("/api/analyze", response_model=Analysis, status_code=201)
     def create_analysis(data: AnalyzeInput):
-        try:
+        with database_errors():
             return database.create_analysis(data.user_id, data.event_id)
-        except LookupError as error:
-            raise HTTPException(status_code=404, detail=str(error)) from None
 
     @app.get("/api/analysis/{analysis_id}", response_model=Analysis)
-    def get_analysis(analysis_id: int):
-        result = database.analysis(analysis_id)
-        if result is None:
-            raise HTTPException(status_code=404, detail="Analysis not found")
-        return result
+    def get_analysis(analysis_id: int = Path(gt=0)):
+        return saved_analysis(database, analysis_id)
+
+    @app.get("/api/dashboard/{analysis_id}", response_model=Dashboard)
+    def dashboard(analysis_id: int = Path(gt=0)):
+        result = saved_analysis(database, analysis_id)
+        return Dashboard(profile=result.profile, event=result.event,
+                         analysis=result, recommendations=result.recommendations)
+
+    @app.get("/api/chat/{analysis_id}", response_model=list[ChatMessage])
+    def chat_history(analysis_id: int = Path(gt=0)):
+        with database_errors():
+            return database.chat_history(analysis_id)
 
     @app.post("/api/chat", response_model=ChatOutput)
     async def chat(data: ChatInput):
-        result = database.analysis(data.analysis_id)
-        if result is None:
-            raise HTTPException(status_code=404, detail="Analysis not found")
-        try:
-            answer = await explain(settings, result, data.question)
-        except AdvisorError as error:
-            raise HTTPException(status_code=error.status_code, detail=error.detail) from None
+        answer = await chat_reply(database, settings, data.analysis_id, data.question)
         return ChatOutput(answer=answer)
 
+    app.include_router(create_router(database, settings))
     return app
 
 
