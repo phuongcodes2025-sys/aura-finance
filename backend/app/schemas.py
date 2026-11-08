@@ -73,6 +73,19 @@ class AnalyzeInput(APIModel):
     event_id: int = Field(gt=0, strict=True)
 
 
+class AnalyzeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    user_id: int = Field(gt=0, strict=True)
+    event_id: int = Field(gt=0, strict=True)
+
+
+class RiskSummary(BaseModel):
+    income_risk: str
+    business_risk: str
+    investment_risk: str
+    real_estate_risk: str
+
+
 class Impact(APIModel):
     area: Area
     risk: Risk
